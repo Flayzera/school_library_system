@@ -98,4 +98,33 @@ public class EmprestimoDAO {
             stmt.executeUpdate();
         }
     }
+
+    public Emprestimo buscarEmprestimoPorId(int id) throws SQLException {
+        String sql = "SELECT * FROM emprestimos WHERE id_emprestimo = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return new Emprestimo(
+                    rs.getInt("id_emprestimo"),
+                    rs.getInt("id_aluno"),
+                    rs.getInt("id_livro"),
+                    rs.getDate("data_emprestimo").toString(),
+                    rs.getDate("data_devolucao").toString()
+                );
+            }
+        }
+        return null;
+    }
+
+    public int getUltimoEmprestimoId() throws SQLException {
+        String sql = "SELECT LAST_INSERT_ID() as id";
+        try (Statement stmt = conexao.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        }
+        return -1;
+    }
 }

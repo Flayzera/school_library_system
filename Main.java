@@ -3,12 +3,15 @@ import src.dao.LivroDAO;
 import src.dao.EmprestimoDAO;
 import src.model.Aluno;
 import src.model.Livro;
+import src.model.Emprestimo;
 import src.util.ConnectionFactory;
+import src.util.ActivityLogger;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Scanner;
+import java.util.ArrayList;
 
 public class Main {
     private static Scanner scanner = new Scanner(System.in);
@@ -77,7 +80,8 @@ public class Main {
                         String matricula = scanner.nextLine();
                         System.out.print("Data de nascimento (yyyy-MM-dd): ");
                         String dataNascimento = scanner.nextLine();
-                        alunoDAO.inserirAluno(new Aluno(0, nome, matricula, dataNascimento));
+                        int idAluno = alunoDAO.inserirAluno(new Aluno(0, nome, matricula, dataNascimento));
+                        ActivityLogger.logStudentActivity("REGISTERED", nome, String.valueOf(idAluno));
                         System.out.println("Aluno cadastrado com sucesso!");
                         break;
                     case "2":
@@ -90,19 +94,59 @@ public class Main {
                     case "3":
                         System.out.print("ID do aluno a atualizar: ");
                         int idAtualizar = Integer.parseInt(scanner.nextLine());
-                        System.out.print("Novo nome: ");
-                        String novoNome = scanner.nextLine();
-                        System.out.print("Nova matrícula: ");
-                        String novaMatricula = scanner.nextLine();
-                        System.out.print("Nova data de nascimento (yyyy-MM-dd): ");
-                        String novaData = scanner.nextLine();
-                        alunoDAO.atualizarAluno(new Aluno(idAtualizar, novoNome, novaMatricula, novaData));
+                        
+                        // Buscar aluno atual
+                        Aluno alunoAtual = alunoDAO.buscarAlunoPorId(idAtualizar);
+                        if (alunoAtual == null) {
+                            System.out.println("Aluno não encontrado!");
+                            break;
+                        }
+                        
+                        System.out.println("\nDados atuais do aluno:");
+                        System.out.println("Nome: " + alunoAtual.getNome());
+                        System.out.println("Matrícula: " + alunoAtual.getMatricula());
+                        System.out.println("Data de nascimento: " + alunoAtual.getDataNascimento());
+                        
+                        System.out.println("\nDigite os novos dados (deixe em branco para manter o valor atual):");
+                        
+                        System.out.print("Novo nome [" + alunoAtual.getNome() + "]: ");
+                        String novoNome = scanner.nextLine().trim();
+                        if (novoNome.isEmpty()) {
+                            novoNome = alunoAtual.getNome();
+                        }
+                        
+                        System.out.print("Nova data de nascimento [" + alunoAtual.getDataNascimento() + "] (yyyy-MM-dd): ");
+                        String novaData = scanner.nextLine().trim();
+                        if (novaData.isEmpty()) {
+                            novaData = alunoAtual.getDataNascimento();
+                        }
+                        
+                        // Preparar mensagens de alteração
+                        List<String> changes = new ArrayList<>();
+                        if (!novoNome.equals(alunoAtual.getNome())) {
+                            changes.add(String.format("Nome alterado de '%s' para '%s'", alunoAtual.getNome(), novoNome));
+                        }
+                        if (!novaData.equals(alunoAtual.getDataNascimento())) {
+                            changes.add(String.format("Data de nascimento alterada de '%s' para '%s'", alunoAtual.getDataNascimento(), novaData));
+                        }
+                        
+                        // Se não houver alterações, informar o usuário
+                        if (changes.isEmpty()) {
+                            System.out.println("Nenhuma alteração foi feita.");
+                            break;
+                        }
+                        
+                        alunoDAO.atualizarAluno(new Aluno(idAtualizar, novoNome, alunoAtual.getMatricula(), novaData));
+                        ActivityLogger.logStudentActivity("UPDATED", novoNome, String.valueOf(idAtualizar), 
+                            changes.toArray(new String[0]));
                         System.out.println("Aluno atualizado com sucesso!");
                         break;
                     case "4":
                         System.out.print("ID do aluno a excluir: ");
                         int idExcluir = Integer.parseInt(scanner.nextLine());
+                        Aluno alunoExcluir = alunoDAO.buscarAlunoPorId(idExcluir);
                         alunoDAO.deletarAluno(idExcluir);
+                        ActivityLogger.logStudentActivity("DELETED", alunoExcluir.getNome(), String.valueOf(idExcluir));
                         System.out.println("Aluno excluído com sucesso!");
                         break;
                     case "0":
@@ -140,7 +184,8 @@ public class Main {
                       int ano = Integer.parseInt(scanner.nextLine());
                       System.out.print("Quantidade em estoque: ");
                       int estoque = Integer.parseInt(scanner.nextLine());
-                      livroDAO.inserirLivro(new Livro(0, titulo, autor, ano, estoque));
+                      int idLivro = livroDAO.inserirLivro(new Livro(0, titulo, autor, ano, estoque));
+                      ActivityLogger.logBookActivity("REGISTERED", titulo, String.valueOf(idLivro));
                       System.out.println("Livro cadastrado com sucesso!");
                       break;
                   case "2":
@@ -153,21 +198,80 @@ public class Main {
                   case "3":
                       System.out.print("ID do livro a atualizar: ");
                       int idAtualizar = Integer.parseInt(scanner.nextLine());
-                      System.out.print("Novo título: ");
-                      String novoTitulo = scanner.nextLine();
-                      System.out.print("Novo autor: ");
-                      String novoAutor = scanner.nextLine();
-                      System.out.print("Novo ano de publicação: ");
-                      int novoAno = Integer.parseInt(scanner.nextLine());
-                      System.out.print("Nova quantidade em estoque: ");
-                      int novaQtd = Integer.parseInt(scanner.nextLine());
+                      
+                      // Buscar livro atual
+                      Livro livroAtual = livroDAO.buscarLivroPorId(idAtualizar);
+                      if (livroAtual == null) {
+                          System.out.println("Livro não encontrado!");
+                          break;
+                      }
+                      
+                      System.out.println("\nDados atuais do livro:");
+                      System.out.println("Título: " + livroAtual.getTitulo());
+                      System.out.println("Autor: " + livroAtual.getAutor());
+                      System.out.println("Ano de publicação: " + livroAtual.getAnoPublicacao());
+                      System.out.println("Quantidade em estoque: " + livroAtual.getQuantidadeEstoque());
+                      
+                      System.out.println("\nDigite os novos dados (deixe em branco para manter o valor atual):");
+                      
+                      System.out.print("Novo título [" + livroAtual.getTitulo() + "]: ");
+                      String novoTitulo = scanner.nextLine().trim();
+                      if (novoTitulo.isEmpty()) {
+                          novoTitulo = livroAtual.getTitulo();
+                      }
+                      
+                      System.out.print("Novo autor [" + livroAtual.getAutor() + "]: ");
+                      String novoAutor = scanner.nextLine().trim();
+                      if (novoAutor.isEmpty()) {
+                          novoAutor = livroAtual.getAutor();
+                      }
+                      
+                      System.out.print("Novo ano de publicação [" + livroAtual.getAnoPublicacao() + "]: ");
+                      String novoAnoStr = scanner.nextLine().trim();
+                      int novoAno = livroAtual.getAnoPublicacao();
+                      if (!novoAnoStr.isEmpty()) {
+                          novoAno = Integer.parseInt(novoAnoStr);
+                      }
+                      
+                      System.out.print("Nova quantidade em estoque [" + livroAtual.getQuantidadeEstoque() + "]: ");
+                      String novaQtdStr = scanner.nextLine().trim();
+                      int novaQtd = livroAtual.getQuantidadeEstoque();
+                      if (!novaQtdStr.isEmpty()) {
+                          novaQtd = Integer.parseInt(novaQtdStr);
+                      }
+                      
+                      // Preparar mensagens de alteração
+                      List<String> changes = new ArrayList<>();
+                      if (!novoTitulo.equals(livroAtual.getTitulo())) {
+                          changes.add(String.format("Título alterado de '%s' para '%s'", livroAtual.getTitulo(), novoTitulo));
+                      }
+                      if (!novoAutor.equals(livroAtual.getAutor())) {
+                          changes.add(String.format("Autor alterado de '%s' para '%s'", livroAtual.getAutor(), novoAutor));
+                      }
+                      if (novoAno != livroAtual.getAnoPublicacao()) {
+                          changes.add(String.format("Ano de publicação alterado de '%d' para '%d'", livroAtual.getAnoPublicacao(), novoAno));
+                      }
+                      if (novaQtd != livroAtual.getQuantidadeEstoque()) {
+                          changes.add(String.format("Quantidade em estoque alterada de '%d' para '%d'", livroAtual.getQuantidadeEstoque(), novaQtd));
+                      }
+                      
+                      // Se não houver alterações, informar o usuário
+                      if (changes.isEmpty()) {
+                          System.out.println("Nenhuma alteração foi feita.");
+                          break;
+                      }
+                      
                       livroDAO.atualizarLivro(new Livro(idAtualizar, novoTitulo, novoAutor, novoAno, novaQtd));
+                      ActivityLogger.logBookActivity("UPDATED", novoTitulo, String.valueOf(idAtualizar), 
+                          changes.toArray(new String[0]));
                       System.out.println("Livro atualizado com sucesso!");
                       break;
                   case "4":
                       System.out.print("ID do livro a excluir: ");
                       int idExcluir = Integer.parseInt(scanner.nextLine());
+                      Livro livroExcluir = livroDAO.buscarLivroPorId(idExcluir);
                       livroDAO.deletarLivro(idExcluir);
+                      ActivityLogger.logBookActivity("DELETED", livroExcluir.getTitulo(), String.valueOf(idExcluir));
                       System.out.println("Livro excluído com sucesso!");
                       break;
                   case "0":
@@ -197,12 +301,61 @@ public class Main {
         try {
             switch (opcao) {
                 case "1":
-                    System.out.print("ID do aluno: ");
+                    // Mostrar alunos disponíveis
+                    System.out.println("\nAlunos disponíveis:");
+                    List<Aluno> alunos = alunoDAO.listarAlunos();
+                    if (alunos.isEmpty()) {
+                        System.out.println("Não há alunos cadastrados!");
+                        break;
+                    }
+                    for (Aluno a : alunos) {
+                        System.out.printf("ID: %d | Nome: %s | Matrícula: %s%n", 
+                            a.getId(), a.getNome(), a.getMatricula());
+                    }
+                    
+                    System.out.print("\nID do aluno: ");
                     int idAluno = Integer.parseInt(scanner.nextLine());
-                    System.out.print("ID do livro: ");
+                    
+                    // Verificar se o aluno existe
+                    Aluno aluno = alunoDAO.buscarAlunoPorId(idAluno);
+                    if (aluno == null) {
+                        System.out.println("Erro: Aluno não encontrado!");
+                        break;
+                    }
+                    
+                    // Mostrar livros disponíveis
+                    System.out.println("\nLivros disponíveis:");
+                    List<Livro> livros = livroDAO.listarLivros();
+                    if (livros.isEmpty()) {
+                        System.out.println("Não há livros cadastrados!");
+                        break;
+                    }
+                    for (Livro l : livros) {
+                        System.out.printf("ID: %d | Título: %s | Autor: %s | Estoque: %d%n", 
+                            l.getId(), l.getTitulo(), l.getAutor(), l.getQuantidadeEstoque());
+                    }
+                    
+                    System.out.print("\nID do livro: ");
                     int idLivro = Integer.parseInt(scanner.nextLine());
-                    emprestimoDAO.registrarEmprestimo(idAluno, idLivro);
-                    System.out.println("Empréstimo registrado com sucesso!");
+                    
+                    // Verificar se o livro existe
+                    Livro livro = livroDAO.buscarLivroPorId(idLivro);
+                    if (livro == null) {
+                        System.out.println("Erro: Livro não encontrado!");
+                        break;
+                    }
+                    
+                    try {
+                        emprestimoDAO.registrarEmprestimo(idAluno, idLivro);
+                        // Obter o empréstimo recém-criado para pegar as datas
+                        Emprestimo novoEmprestimo = emprestimoDAO.buscarEmprestimoPorId(
+                            emprestimoDAO.getUltimoEmprestimoId());
+                        ActivityLogger.logLoanActivity("REGISTERED", aluno.getNome(), livro.getTitulo(),
+                            novoEmprestimo.getDataEmprestimo(), novoEmprestimo.getDataDevolucao());
+                        System.out.println("Empréstimo registrado com sucesso!");
+                    } catch (SQLException e) {
+                        System.out.println("Erro ao registrar empréstimo: " + e.getMessage());
+                    }
                     break;
                 case "2":
                     var emprestimos = emprestimoDAO.listarEmprestimos();
@@ -215,15 +368,59 @@ public class Main {
                 case "3":
                     System.out.print("ID do empréstimo a atualizar: ");
                     int idEmprestimo = Integer.parseInt(scanner.nextLine());
-                    System.out.print("Nova data de devolução (yyyy-MM-dd): ");
-                    String novaData = scanner.nextLine();
+                    
+                    // Buscar empréstimo atual
+                    Emprestimo emprestimoAtual = emprestimoDAO.buscarEmprestimoPorId(idEmprestimo);
+                    if (emprestimoAtual == null) {
+                        System.out.println("Empréstimo não encontrado!");
+                        break;
+                    }
+                    
+                    // Buscar informações do aluno e livro
+                    Aluno alunoAtualizado = alunoDAO.buscarAlunoPorId(emprestimoAtual.getIdAluno());
+                    Livro livroAtualizado = livroDAO.buscarLivroPorId(emprestimoAtual.getIdLivro());
+                    
+                    System.out.println("\nDados atuais do empréstimo:");
+                    System.out.println("Aluno: " + alunoAtualizado.getNome());
+                    System.out.println("Livro: " + livroAtualizado.getTitulo());
+                    System.out.println("Data de empréstimo: " + emprestimoAtual.getDataEmprestimo());
+                    System.out.println("Data de devolução: " + emprestimoAtual.getDataDevolucao());
+                    
+                    System.out.println("\nDigite a nova data de devolução (deixe em branco para manter a data atual):");
+                    System.out.print("Nova data de devolução [" + emprestimoAtual.getDataDevolucao() + "] (yyyy-MM-dd): ");
+                    String novaData = scanner.nextLine().trim();
+                    if (novaData.isEmpty()) {
+                        novaData = emprestimoAtual.getDataDevolucao();
+                    }
+                    
+                    // Preparar mensagens de alteração
+                    List<String> changes = new ArrayList<>();
+                    if (!novaData.equals(emprestimoAtual.getDataDevolucao())) {
+                        changes.add(String.format("Data de devolução alterada de '%s' para '%s'", 
+                            emprestimoAtual.getDataDevolucao(), novaData));
+                    }
+                    
+                    // Se não houver alterações, informar o usuário
+                    if (changes.isEmpty()) {
+                        System.out.println("Nenhuma alteração foi feita.");
+                        break;
+                    }
+                    
                     emprestimoDAO.atualizarDataDevolucao(idEmprestimo, novaData);
+                    ActivityLogger.logLoanActivity("UPDATED", alunoAtualizado.getNome(), livroAtualizado.getTitulo(),
+                        emprestimoAtual.getDataEmprestimo(), novaData,
+                        changes.toArray(new String[0]));
                     System.out.println("Data de devolução atualizada com sucesso!");
                     break;
                 case "4":
                     System.out.print("ID do empréstimo a excluir: ");
                     int idExcluir = Integer.parseInt(scanner.nextLine());
+                    var emprestimoExcluir = emprestimoDAO.buscarEmprestimoPorId(idExcluir);
+                    Aluno alunoEmprestimo = alunoDAO.buscarAlunoPorId(emprestimoExcluir.getIdAluno());
+                    Livro livroEmprestimo = livroDAO.buscarLivroPorId(emprestimoExcluir.getIdLivro());
                     emprestimoDAO.deletarEmprestimo(idExcluir);
+                    ActivityLogger.logLoanActivity("DELETED", alunoEmprestimo.getNome(), livroEmprestimo.getTitulo(),
+                        emprestimoExcluir.getDataEmprestimo(), emprestimoExcluir.getDataDevolucao());
                     System.out.println("Empréstimo excluído com sucesso!");
                     break;
                 case "0":

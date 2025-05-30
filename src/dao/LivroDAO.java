@@ -13,15 +13,22 @@ public class LivroDAO {
         this.conexao = conexao;
     }
 
-    public void inserirLivro(Livro livro) throws SQLException {
+    public int inserirLivro(Livro livro) throws SQLException {
         String sql = "INSERT INTO Livros (titulo, autor, ano_publicacao, quantidade_estoque) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, livro.getTitulo());
             stmt.setString(2, livro.getAutor());
             stmt.setInt(3, livro.getAnoPublicacao());
             stmt.setInt(4, livro.getQuantidadeEstoque());
             stmt.executeUpdate();
+            
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
         }
+        return -1;
     }
 
     public List<Livro> listarLivros() throws SQLException {
@@ -61,5 +68,23 @@ public class LivroDAO {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         }
+    }
+
+    public Livro buscarLivroPorId(int id) throws SQLException {
+        String sql = "SELECT * FROM livros WHERE id_livro = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return new Livro(
+                    rs.getInt("id_livro"),
+                    rs.getString("titulo"),
+                    rs.getString("autor"),
+                    rs.getInt("ano_publicacao"),
+                    rs.getInt("quantidade_estoque")
+                );
+            }
+        }
+        return null;
     }
 }
