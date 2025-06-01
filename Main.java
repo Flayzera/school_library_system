@@ -81,7 +81,7 @@ public class Main {
                         System.out.print("Data de nascimento (yyyy-MM-dd): ");
                         String dataNascimento = scanner.nextLine();
                         int idAluno = alunoDAO.inserirAluno(new Aluno(0, nome, matricula, dataNascimento));
-                        ActivityLogger.logStudentActivity("REGISTERED", nome, String.valueOf(idAluno));
+                        ActivityLogger.logStudentActivity("CADASTRADO", nome, String.valueOf(idAluno));
                         System.out.println("Aluno cadastrado com sucesso!");
                         break;
                     case "2":
@@ -137,7 +137,7 @@ public class Main {
                         }
                         
                         alunoDAO.atualizarAluno(new Aluno(idAtualizar, novoNome, alunoAtual.getMatricula(), novaData));
-                        ActivityLogger.logStudentActivity("UPDATED", novoNome, String.valueOf(idAtualizar), 
+                        ActivityLogger.logStudentActivity("ATUALIZADO", novoNome, String.valueOf(idAtualizar), 
                             changes.toArray(new String[0]));
                         System.out.println("Aluno atualizado com sucesso!");
                         break;
@@ -146,7 +146,7 @@ public class Main {
                         int idExcluir = Integer.parseInt(scanner.nextLine());
                         Aluno alunoExcluir = alunoDAO.buscarAlunoPorId(idExcluir);
                         alunoDAO.deletarAluno(idExcluir);
-                        ActivityLogger.logStudentActivity("DELETED", alunoExcluir.getNome(), String.valueOf(idExcluir));
+                        ActivityLogger.logStudentActivity("EXCLUÍDO", alunoExcluir.getNome(), String.valueOf(idExcluir));
                         System.out.println("Aluno excluído com sucesso!");
                         break;
                     case "0":
@@ -185,7 +185,7 @@ public class Main {
                       System.out.print("Quantidade em estoque: ");
                       int estoque = Integer.parseInt(scanner.nextLine());
                       int idLivro = livroDAO.inserirLivro(new Livro(0, titulo, autor, ano, estoque));
-                      ActivityLogger.logBookActivity("REGISTERED", titulo, String.valueOf(idLivro));
+                      ActivityLogger.logBookActivity("CADASTRADO", titulo, String.valueOf(idLivro));
                       System.out.println("Livro cadastrado com sucesso!");
                       break;
                   case "2":
@@ -262,7 +262,7 @@ public class Main {
                       }
                       
                       livroDAO.atualizarLivro(new Livro(idAtualizar, novoTitulo, novoAutor, novoAno, novaQtd));
-                      ActivityLogger.logBookActivity("UPDATED", novoTitulo, String.valueOf(idAtualizar), 
+                      ActivityLogger.logBookActivity("ATUALIZADO", novoTitulo, String.valueOf(idAtualizar), 
                           changes.toArray(new String[0]));
                       System.out.println("Livro atualizado com sucesso!");
                       break;
@@ -271,7 +271,7 @@ public class Main {
                       int idExcluir = Integer.parseInt(scanner.nextLine());
                       Livro livroExcluir = livroDAO.buscarLivroPorId(idExcluir);
                       livroDAO.deletarLivro(idExcluir);
-                      ActivityLogger.logBookActivity("DELETED", livroExcluir.getTitulo(), String.valueOf(idExcluir));
+                      ActivityLogger.logBookActivity("EXCLUÍDO", livroExcluir.getTitulo(), String.valueOf(idExcluir));
                       System.out.println("Livro excluído com sucesso!");
                       break;
                   case "0":
@@ -350,7 +350,7 @@ public class Main {
                         // Obter o empréstimo recém-criado para pegar as datas
                         Emprestimo novoEmprestimo = emprestimoDAO.buscarEmprestimoPorId(
                             emprestimoDAO.getUltimoEmprestimoId());
-                        ActivityLogger.logLoanActivity("REGISTERED", aluno.getNome(), livro.getTitulo(),
+                        ActivityLogger.logLoanActivity("CADASTRADO", aluno.getNome(), livro.getTitulo(),
                             novoEmprestimo.getDataEmprestimo(), novoEmprestimo.getDataDevolucao());
                         System.out.println("Empréstimo registrado com sucesso!");
                     } catch (SQLException e) {
@@ -407,7 +407,7 @@ public class Main {
                     }
                     
                     emprestimoDAO.atualizarDataDevolucao(idEmprestimo, novaData);
-                    ActivityLogger.logLoanActivity("UPDATED", alunoAtualizado.getNome(), livroAtualizado.getTitulo(),
+                    ActivityLogger.logLoanActivity("ATUALIZADO", alunoAtualizado.getNome(), livroAtualizado.getTitulo(),
                         emprestimoAtual.getDataEmprestimo(), novaData,
                         changes.toArray(new String[0]));
                     System.out.println("Data de devolução atualizada com sucesso!");
@@ -419,7 +419,7 @@ public class Main {
                     Aluno alunoEmprestimo = alunoDAO.buscarAlunoPorId(emprestimoExcluir.getIdAluno());
                     Livro livroEmprestimo = livroDAO.buscarLivroPorId(emprestimoExcluir.getIdLivro());
                     emprestimoDAO.deletarEmprestimo(idExcluir);
-                    ActivityLogger.logLoanActivity("DELETED", alunoEmprestimo.getNome(), livroEmprestimo.getTitulo(),
+                    ActivityLogger.logLoanActivity("EXCLUÍDO", alunoEmprestimo.getNome(), livroEmprestimo.getTitulo(),
                         emprestimoExcluir.getDataEmprestimo(), emprestimoExcluir.getDataDevolucao());
                     System.out.println("Empréstimo excluído com sucesso!");
                     break;
