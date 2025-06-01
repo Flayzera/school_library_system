@@ -286,6 +286,26 @@ public class Main {
       }
   }
   
+  private static void mostrarEmprestimos() throws SQLException {
+      var emprestimos = emprestimoDAO.listarEmprestimos();
+      if (emprestimos.isEmpty()) {
+          System.out.println("Não há empréstimos registrados!");
+          return;
+      }
+      
+      System.out.println("\nLista de empréstimos ativos:");
+      System.out.println("----------------------------------------");
+      for (var e : emprestimos) {
+          Aluno aluno = alunoDAO.buscarAlunoPorId(e.getIdAluno());
+          Livro livro = livroDAO.buscarLivroPorId(e.getIdLivro());
+          System.out.printf("ID: %d | Aluno: %s | Livro: %s%n", 
+              e.getId(), aluno.getNome(), livro.getTitulo());
+          System.out.printf("Data do empréstimo: %s | Data de devolução: %s%n",
+              e.getDataEmprestimo(), e.getDataDevolucao());
+          System.out.println("----------------------------------------");
+      }
+  }
+
   private static void gerenciarEmprestimos() {
     boolean voltar = false;
     while (!voltar) {
@@ -294,6 +314,7 @@ public class Main {
         System.out.println("2. Listar empréstimos");
         System.out.println("3. Atualizar data de devolução");
         System.out.println("4. Excluir empréstimo");
+        System.out.println("5. Registrar devolução");
         System.out.println("0. Voltar");
         System.out.print("Escolha uma opção: ");
         String opcao = scanner.nextLine();
@@ -358,15 +379,11 @@ public class Main {
                     }
                     break;
                 case "2":
-                    var emprestimos = emprestimoDAO.listarEmprestimos();
-                    System.out.println("Lista de empréstimos:");
-                    for (var e : emprestimos) {
-                        System.out.printf("ID: %d | Aluno ID: %d | Livro ID: %d | Emprestimo: %s | Devolução: %s%n",
-                            e.getId(), e.getIdAluno(), e.getIdLivro(), e.getDataEmprestimo(), e.getDataDevolucao());
-                    }
+                    mostrarEmprestimos();
                     break;
                 case "3":
-                    System.out.print("ID do empréstimo a atualizar: ");
+                    mostrarEmprestimos();
+                    System.out.print("\nID do empréstimo a atualizar: ");
                     int idEmprestimo = Integer.parseInt(scanner.nextLine());
                     
                     // Buscar empréstimo atual
@@ -413,15 +430,45 @@ public class Main {
                     System.out.println("Data de devolução atualizada com sucesso!");
                     break;
                 case "4":
-                    System.out.print("ID do empréstimo a excluir: ");
+                    mostrarEmprestimos();
+                    System.out.print("\nID do empréstimo a excluir: ");
                     int idExcluir = Integer.parseInt(scanner.nextLine());
                     var emprestimoExcluir = emprestimoDAO.buscarEmprestimoPorId(idExcluir);
+                    if (emprestimoExcluir == null) {
+                        System.out.println("Empréstimo não encontrado!");
+                        break;
+                    }
                     Aluno alunoEmprestimo = alunoDAO.buscarAlunoPorId(emprestimoExcluir.getIdAluno());
                     Livro livroEmprestimo = livroDAO.buscarLivroPorId(emprestimoExcluir.getIdLivro());
                     emprestimoDAO.deletarEmprestimo(idExcluir);
                     ActivityLogger.logLoanActivity("EXCLUÍDO", alunoEmprestimo.getNome(), livroEmprestimo.getTitulo(),
                         emprestimoExcluir.getDataEmprestimo(), emprestimoExcluir.getDataDevolucao());
                     System.out.println("Empréstimo excluído com sucesso!");
+                    break;
+                case "5":
+                    mostrarEmprestimos();
+                    System.out.print("\nID do empréstimo a devolver: ");
+                    int idDevolver = Integer.parseInt(scanner.nextLine());
+                    
+                    // Buscar empréstimo
+                    Emprestimo emprestimoDevolver = emprestimoDAO.buscarEmprestimoPorId(idDevolver);
+                    if (emprestimoDevolver == null) {
+                        System.out.println("Empréstimo não encontrado!");
+                        break;
+                    }
+                    
+                    // Buscar informações do aluno e livro
+                    Aluno alunoDevolver = alunoDAO.buscarAlunoPorId(emprestimoDevolver.getIdAluno());
+                    Livro livroDevolver = livroDAO.buscarLivroPorId(emprestimoDevolver.getIdLivro());
+                    
+                    try {
+                        emprestimoDAO.registrarDevolucao(idDevolver);
+                        ActivityLogger.logLoanActivity("DEVOLVIDO", alunoDevolver.getNome(), livroDevolver.getTitulo(),
+                            emprestimoDevolver.getDataEmprestimo(), emprestimoDevolver.getDataDevolucao());
+                        System.out.println("Livro devolvido com sucesso!");
+                    } catch (SQLException e) {
+                        System.out.println("Erro ao registrar devolução: " + e.getMessage());
+                    }
                     break;
                 case "0":
                     voltar = true;

@@ -127,4 +127,33 @@ public class EmprestimoDAO {
         }
         return -1;
     }
+
+    public void registrarDevolucao(int idEmprestimo) throws SQLException {
+        // Buscar informações do empréstimo
+        String sqlEmprestimo = "SELECT id_livro FROM Emprestimos WHERE id_emprestimo = ?";
+        int idLivro = -1;
+        try (PreparedStatement stmt = conexao.prepareStatement(sqlEmprestimo)) {
+            stmt.setInt(1, idEmprestimo);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                idLivro = rs.getInt("id_livro");
+            } else {
+                throw new SQLException("Empréstimo não encontrado.");
+            }
+        }
+
+        // Atualizar estoque do livro
+        String atualizaEstoque = "UPDATE Livros SET quantidade_estoque = quantidade_estoque + 1 WHERE id_livro = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(atualizaEstoque)) {
+            stmt.setInt(1, idLivro);
+            stmt.executeUpdate();
+        }
+
+        // Excluir o empréstimo
+        String sql = "DELETE FROM Emprestimos WHERE id_emprestimo = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setInt(1, idEmprestimo);
+            stmt.executeUpdate();
+        }
+    }
 }
